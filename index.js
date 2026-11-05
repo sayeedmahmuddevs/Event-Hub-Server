@@ -37,6 +37,18 @@ app.get ("/events/:id", async(req, res) => {
 })
 
 
+// edit
+app.patch('/events/:id', async(req, res) => {
+  const {id} = req.params
+  const updateData = req.body
+  const result = await eventsCollection.updateOne(
+    {_id: new ObjectId(id)},
+    {$set: updateData}
+  )
+  res.json(result)
+})
+
+
 // events created api
 // http://localhost:8000/events
 app.post("/events", async (req, res) => {

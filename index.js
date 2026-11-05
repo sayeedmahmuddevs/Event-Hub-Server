@@ -48,6 +48,15 @@ app.patch('/events/:id', async(req, res) => {
   res.json(result)
 })
 
+// delete event
+
+app.delete('/events/:id', async(req, res) => {
+  const {id} = req.params
+  const result = await eventsCollection.deleteOne(
+    {_id: new ObjectId(id)}
+  )
+  res.json(result)
+})
 
 // events created api
 // http://localhost:8000/events

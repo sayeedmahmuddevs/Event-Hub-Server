@@ -66,6 +66,18 @@ app.post("/events", async (req, res) => {
   res.send(result);
   
 })
+// http://localhost:8000/events/user/userId
+app.get("/events/users/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  const result = await eventsCollection
+    .find({ userId:userId })
+    .toArray();
+
+  res.send(result);
+});
+
+
 
 app.get("/events", async(req, res) => {
   const result = await eventsCollection.find().toArray()

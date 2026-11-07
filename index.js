@@ -28,6 +28,7 @@ export async function connectToMongoDB() {
 const mongoClient = await connectToMongoDB();
 const db = mongoClient.db("event_hub");
 const eventsCollection = db.collection("events");
+const eventCollectionUser = db.collection("user")
 
 // singleCard
 app.get ("/events/:id", async(req, res) => {
@@ -40,10 +41,12 @@ app.get ("/events/:id", async(req, res) => {
 // edit
 app.patch('/events/:id', async(req, res) => {
   const {id} = req.params
-  const updateData = req.body
+  const {userId, ...eventData} = req.body
   const result = await eventsCollection.updateOne(
-    {_id: new ObjectId(id)},
-    {$set: updateData}
+    {_id: new ObjectId(id),
+      userId : userId
+    },
+    {$set: eventData}
   )
   res.json(result)
 })
@@ -52,8 +55,11 @@ app.patch('/events/:id', async(req, res) => {
 
 app.delete('/events/:id', async(req, res) => {
   const {id} = req.params
+  const {userId} = req.body
   const result = await eventsCollection.deleteOne(
-    {_id: new ObjectId(id)}
+    {_id: new ObjectId(id),
+      userId : userId
+    }
   )
   res.json(result)
 })
@@ -77,12 +83,80 @@ app.get("/events/users/:userId", async (req, res) => {
   res.send(result);
 });
 
+// http://localhost:8000/user/:userId
+
+app.get("/user/:userId", async (req, res) => {
+  
+    const { userId } = req.params;
 
 
+    const user = await eventCollectionUser.findOne(
+      { _id: new ObjectId(userId) },
+      {
+        projection: {
+          _id: 0,
+          name: 1,
+          image: 1,
+        },
+      }
+    );
+
+    res.send(user);
+
+  
+});
+
+// Get user name and image using Better Auth user ID
+// app.get("/user/:userId", async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     const user = await eventCollectionUser.findOne(
+//       { id: userId },
+//       {
+//         projection: {
+//           _id: 0,
+//           name: 1,
+//           image: 1,
+//         },
+//       }
+//     );
+
+//     if (!user) {
+//       return res.status(404).send({
+//         message: "User not found",
+//       });
+//     }
+
+//     res.send(user);
+
+//   } catch (error) {
+//     console.error(error);
+
+//     res.status(500).send({
+//       message: "Server error",
+//     });
+//   }
+// });
+
+// upcoming Event
 app.get("/events", async(req, res) => {
-  const result = await eventsCollection.find().toArray()
+  const today = new Date().toISOString().split("T")[0];
+
+  const result = await eventsCollection.find({
+    eventDate:{$gte: today}
+  })
+  .sort({eventDate : 1})
+  .toArray()
+
   res.send(result)
 })
+
+
+// app.get("/events", async(req, res) => {
+//   const result = await eventsCollection.find().toArray()
+//   res.send(result)
+// })
 
 
 

@@ -90,7 +90,6 @@ app.get("/user/:userId", async (req, res) => {
   
     const { userId } = req.params;
 
-
     const user = await eventCollectionUser.findOne(
       { _id: new ObjectId(userId) },
       {
@@ -139,9 +138,24 @@ app.get("/joined-events/:userId", async (req, res) => {
   const result = await joindEventCollection
     .find({ userId: userId })
     .toArray();
+  const eventId = result.map((item) => new ObjectId(item.eventId))
+  const allResult = await eventsCollection.find({
+    _id : {$in: eventId},
+  })
+  .toArray()
 
-  res.send(result);
+  console.log(allResult)
+  res.send(allResult);
 });
+
+app.get("/joined-event/events/:id", async(req, res) =>{
+  const {id} = req.params;
+  const result = await joindEventCollection.find({
+    eventId : id
+  }).toArray()
+  res.send(result)
+
+})
 
 
 // upcoming Event

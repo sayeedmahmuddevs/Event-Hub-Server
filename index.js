@@ -28,8 +28,9 @@ export async function connectToMongoDB() {
 const mongoClient = await connectToMongoDB();
 const db = mongoClient.db("event_hub");
 const eventsCollection = db.collection("events");
-const eventCollectionUser = db.collection("user");
+const user = db.collection("user");
 const joindEventCollection = db.collection("joined-event")
+
 
 // singleCard
 app.get ("/events/:id", async(req, res) => {
@@ -90,7 +91,7 @@ app.get("/user/:userId", async (req, res) => {
   
     const { userId } = req.params;
 
-    const user = await eventCollectionUser.findOne(
+    const user = await user.findOne(
       { _id: new ObjectId(userId) },
       {
         projection: {
@@ -100,10 +101,8 @@ app.get("/user/:userId", async (req, res) => {
         },
       }
     );
-
     res.send(user);
 
-  
 });
 
 // http://localhost:8000/joined-events
@@ -132,12 +131,15 @@ app.post("/joined-events", async(req, res)=>{
 
 })
 
+// http://localhost:8000/joined-events/:userId
+
 app.get("/joined-events/:userId", async (req, res) => {
   const { userId } = req.params;
 
   const result = await joindEventCollection
     .find({ userId: userId })
     .toArray();
+
   const eventId = result.map((item) => new ObjectId(item.eventId))
   const allResult = await eventsCollection.find({
     _id : {$in: eventId},
@@ -147,7 +149,7 @@ app.get("/joined-events/:userId", async (req, res) => {
   console.log(allResult)
   res.send(allResult);
 });
-
+// http://localhost:8000/joined-event/events/:id
 app.get("/joined-event/events/:id", async(req, res) =>{
   const {id} = req.params;
   const result = await joindEventCollection.find({
@@ -155,6 +157,16 @@ app.get("/joined-event/events/:id", async(req, res) =>{
   }).toArray()
   res.send(result)
 
+})
+
+// http://localhost:8000/users/:username
+app.get('/users/:username', async(req, res) => {
+  const username = req.params.username
+  const result = await user.findOne({
+     username: username
+  })
+
+  res.send(result)
 })
 
 

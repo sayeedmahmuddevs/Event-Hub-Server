@@ -28,7 +28,8 @@ export async function connectToMongoDB() {
 const mongoClient = await connectToMongoDB();
 const db = mongoClient.db("event_hub");
 const eventsCollection = db.collection("events");
-const eventCollectionUser = db.collection("user")
+const eventCollectionUser = db.collection("user");
+const joindEventCollection = db.collection("joined-event")
 
 // singleCard
 app.get ("/events/:id", async(req, res) => {
@@ -106,38 +107,42 @@ app.get("/user/:userId", async (req, res) => {
   
 });
 
-// Get user name and image using Better Auth user ID
-// app.get("/user/:userId", async (req, res) => {
-//   try {
-//     const { userId } = req.params;
+// http://localhost:8000/joined-events
 
-//     const user = await eventCollectionUser.findOne(
-//       { id: userId },
-//       {
-//         projection: {
-//           _id: 0,
-//           name: 1,
-//           image: 1,
-//         },
-//       }
-//     );
+app.post("/joined-events", async(req, res)=>{
+  const { eventId, userId } = req.body;
 
-//     if (!user) {
-//       return res.status(404).send({
-//         message: "User not found",
-//       });
-//     }
+  const existing = await joindEventCollection.findOne({
+      eventId,
+      userId,
+    });
 
-//     res.send(user);
+    if (existing) {
+      return res.send({
+        message: "Already joined this event",
+      });
+    }
 
-//   } catch (error) {
-//     console.error(error);
+    const result = await joindEventCollection.insertOne({
+      eventId,
+      userId,
+      joinedAt: new Date(),
+    });
 
-//     res.status(500).send({
-//       message: "Server error",
-//     });
-//   }
-// });
+  res.send(result)
+
+})
+
+app.get("/joined-events/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  const result = await joindEventCollection
+    .find({ userId: userId })
+    .toArray();
+
+  res.send(result);
+});
+
 
 // upcoming Event
 app.get("/events", async(req, res) => {
@@ -151,13 +156,6 @@ app.get("/events", async(req, res) => {
 
   res.send(result)
 })
-
-
-// app.get("/events", async(req, res) => {
-//   const result = await eventsCollection.find().toArray()
-//   res.send(result)
-// })
-
 
 
 app.listen(PORT, () => {

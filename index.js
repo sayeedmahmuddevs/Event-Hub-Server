@@ -214,7 +214,7 @@ app.get("/users/:username",veryfied, async (req, res) => {
 });
 
 // upcoming Event
-app.get("/events",veryfied,async (req, res) => {
+app.get("/events",veryfied, async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
 
   const result = await eventsCollection
@@ -228,7 +228,7 @@ app.get("/events",veryfied,async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  app.send(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
 
 export default app

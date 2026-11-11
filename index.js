@@ -2,6 +2,7 @@ import express from "express";
 import { MongoClient, ObjectId } from "mongodb";
 import "dotenv/config";
 import cors from "cors";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -29,15 +30,35 @@ const eventsCollection = db.collection("events");
 const user = db.collection("user");
 const joindEventCollection = db.collection("joined-event");
 
+const veryfied = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if(!authHeader?.startsWith('Bearer ')){
+    return res.status(401).send({msg : "Unauthorized"})
+  }
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    const JWKS = createRemoteJWKSet(
+      new URL('http://localhost:3000/api/auth/jwks'));
+      const {payload} = await jwtVerify(token, JWKS)
+      req.user = payload;
+      next();
+    
+  } catch (error) {
+    return res.status(401).send({msg : "Unauthorized"})
+  }
+};
+
 // singleCard
-app.get("/events/:id", async (req, res) => {
+app.get("/events/:id",veryfied, async (req, res) => {
   const { id } = req.params;
   const result = await eventsCollection.findOne({ _id: new ObjectId(id) });
   res.send(result);
 });
 
 // edit
-app.patch("/events/:id", async (req, res) => {
+app.patch("/events/:id", veryfied, async (req, res) => {
   const { id } = req.params;
   const { userId, ...eventData } = req.body;
   const result = await eventsCollection.updateOne(
@@ -49,7 +70,7 @@ app.patch("/events/:id", async (req, res) => {
 
 // delete event
 
-app.delete("/events/:id", async (req, res) => {
+app.delete("/events/:id",veryfied, async (req, res) => {
   const { id } = req.params;
   const { userId } = req.body;
   const result = await eventsCollection.deleteOne({
@@ -61,30 +82,9 @@ app.delete("/events/:id", async (req, res) => {
 
 // events created api
 // http://localhost:8000/events
-app.post("/events", async (req, res) => {
+app.post("/events", veryfied, async (req, res) => {
   try {
     const eventData = req.body;
-    const title = eventData.title?.trim();
-
-    if (!title) {
-      return res.status(400).send({
-        message: "Event title is required!",
-      });
-    }
-
-    const existingEvent = await eventsCollection.findOne(
-      { title: title },
-      {
-        collation: { locale: "en", strength: 2 },
-      },
-    );
-
-    if (existingEvent) {
-      return res.status(409).send({
-        message: "This event name already exists!",
-      });
-    }
-
     const result = await eventsCollection.insertOne({
       ...eventData,
       title,
@@ -103,7 +103,7 @@ app.post("/events", async (req, res) => {
   }
 });
 // http://localhost:8000/events/user/userId
-app.get("/events/users/:userId", async (req, res) => {
+app.get("/events/users/:userId", veryfied, async (req, res) => {
   const { userId } = req.params;
 
   const result = await eventsCollection.find({ userId: userId }).toArray();
@@ -113,7 +113,7 @@ app.get("/events/users/:userId", async (req, res) => {
 
 // http://localhost:8000/user/:userId
 
-app.get("/user/:userId", async (req, res) => {
+app.get("/user/:userId", veryfied, async (req, res) => {
   const { userId } = req.params;
 
   const result = await user.findOne(
@@ -131,9 +131,8 @@ app.get("/user/:userId", async (req, res) => {
 
 // http://localhost:8000/joined-events
 
-app.post("/joined-events", async (req, res) => {
+app.post("/joined-events",veryfied, async (req, res) => {
   const { eventId, userId } = req.body;
-  const title = eventData.title?.trim();
 
   const existing = await joindEventCollection.findOne({
     eventId,
@@ -155,7 +154,10 @@ app.post("/joined-events", async (req, res) => {
   res.send(result);
 });
 
-app.delete("/joined-events/:id", async (req, res) => {
+
+
+
+app.delete("/joined-events/:id", veryfied, async (req, res) => {
   const { id } = req.params;
   const { userId } = req.body;
   const result = await joindEventCollection.deleteOne({
@@ -167,7 +169,7 @@ app.delete("/joined-events/:id", async (req, res) => {
 
 // http://localhost:8000/joined-events/:userId
 
-app.get("/joined-events/:userId", async (req, res) => {
+app.get("/joined-events/:userId",veryfied, async (req, res) => {
   const { userId } = req.params;
 
   const result = await joindEventCollection.find({ userId: userId }).toArray();
@@ -183,7 +185,7 @@ app.get("/joined-events/:userId", async (req, res) => {
   res.send(allResult);
 });
 // http://localhost:8000/joined-event/events/:id
-app.get("/joined-event/events/:id", async (req, res) => {
+app.get("/joined-event/events/:id", veryfied, async (req, res) => {
   const { id } = req.params;
   const result = await joindEventCollection
     .find({
@@ -194,7 +196,7 @@ app.get("/joined-event/events/:id", async (req, res) => {
 });
 
 // http://localhost:8000/users/:username
-app.get("/users/:username", async (req, res) => {
+app.get("/users/:username",veryfied, async (req, res) => {
   const username = req.params.username;
   const result = await user.findOne({
     username: username,

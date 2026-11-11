@@ -227,6 +227,19 @@ app.get("/events", async (req, res) => {
   res.send(result);
 });
 
+app.get("/pastevents", async (req, res) => {
+  const today = new Date().toISOString().split("T")[0];
+
+  const result = await eventsCollection
+    .find({
+      eventDate: { $lt: today },
+    })
+    .sort({ eventDate: -1 })
+    .toArray();
+
+  res.send(result);
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

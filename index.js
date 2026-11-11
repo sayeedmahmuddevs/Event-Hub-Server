@@ -40,7 +40,7 @@ const veryfied = async (req, res, next) => {
   
   try {
     const JWKS = createRemoteJWKSet(
-      new URL('http://localhost:3000/api/auth/jwks'));
+      new URL(`${process.env.CLIENT_URL}/api/auth/jwks`));
       const {payload} = await jwtVerify(token, JWKS)
       req.user = payload;
       next();
@@ -85,6 +85,14 @@ app.delete("/events/:id",veryfied, async (req, res) => {
 app.post("/events", veryfied, async (req, res) => {
   try {
     const eventData = req.body;
+    const title = eventData.title?.trim();
+
+    if (!title) {
+      return res.status(400).send({
+        message: "Event title is required!",
+      });
+    }
+
     const result = await eventsCollection.insertOne({
       ...eventData,
       title,
@@ -206,7 +214,7 @@ app.get("/users/:username",veryfied, async (req, res) => {
 });
 
 // upcoming Event
-app.get("/events", async (req, res) => {
+app.get("/events",veryfied, async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
 
   const result = await eventsCollection
@@ -222,3 +230,5 @@ app.get("/events", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+export default app

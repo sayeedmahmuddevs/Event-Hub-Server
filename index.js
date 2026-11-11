@@ -82,7 +82,7 @@ app.delete("/events/:id",veryfied, async (req, res) => {
 
 // events created api
 // http://localhost:8000/events
-app.post("/events", veryfied, async (req, res) => {
+app.post("/events", async (req, res) => {
   try {
     const eventData = req.body;
     const title = eventData.title?.trim();

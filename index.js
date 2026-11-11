@@ -214,7 +214,7 @@ app.get("/users/:username",veryfied, async (req, res) => {
 });
 
 // upcoming Event
-app.get("/events",veryfied, async (req, res) => {
+app.get("/events",async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
 
   const result = await eventsCollection

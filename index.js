@@ -82,7 +82,7 @@ app.delete("/events/:id",veryfied, async (req, res) => {
 
 // events created api
 // http://localhost:8000/events
-app.post("/events", async (req, res) => {
+app.post("/events", veryfied, async (req, res) => {
   try {
     const eventData = req.body;
     const title = eventData.title?.trim();
@@ -214,7 +214,7 @@ app.get("/users/:username",veryfied, async (req, res) => {
 });
 
 // upcoming Event
-app.get("/events",veryfied, async (req, res) => {
+app.get("/events", async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
 
   const result = await eventsCollection
